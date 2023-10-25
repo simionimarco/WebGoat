@@ -6,7 +6,7 @@ Library  String
 Suite Setup  Initial_Page  ${ENDPOINT}  ${BROWSER}
 Suite Teardown  Close_Page
 
-*** Variables ***
+*** Variables *******
 ${BROWSER}  chrome
 ${SLEEP}  100
 ${DELAY}  0.25
