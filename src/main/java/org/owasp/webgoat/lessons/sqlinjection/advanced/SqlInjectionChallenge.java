@@ -45,60 +45,60 @@ import org.springframework.web.bind.annotation.RestController;
 
 public class SqlInjectionChallenge extends AssignmentEndpoint {
 
- private final LessonDataSource dataSource;
+    private final LessonDataSource dataSource;
 
- public SqlInjectionChallenge(LessonDataSource dataSource) {
-     this.dataSource = dataSource;
- }
+    public SqlInjectionChallenge(LessonDataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
- @PutMapping("/SqlInjectionAdvanced/challenge")
- @ResponseBody
- public AttackResult registerNewUser(
-         @RequestParam String username_reg,
-         @RequestParam String email_reg,
-         @RequestParam String password_reg) {
-     AttackResult attackResult = checkArguments(username_reg, email_reg, password_reg);
+    @PutMapping("/SqlInjectionAdvanced/challenge")
+    @ResponseBody
+    public AttackResult registerNewUser(
+            @RequestParam String username_reg,
+            @RequestParam String email_reg,
+            @RequestParam String password_reg) {
+        AttackResult attackResult = checkArguments(username_reg, email_reg, password_reg);
 
-     if (attackResult == null) {
-         try (Connection connection = dataSource.getConnection()) {
-             String checkUserQuery = "SELECT userid FROM sql_challenge_users WHERE userid = ?";
-             try (PreparedStatement statement = connection.prepareStatement(checkUserQuery)) {
-                 statement.setString(1, username_reg);
-                 ResultSet resultSet = statement.executeQuery();
+        if (attackResult == null) {
+            try (Connection connection = dataSource.getConnection()) {
+                String checkUserQuery = "SELECT userid FROM sql_challenge_users WHERE userid = ?";
+                try (PreparedStatement statement = connection.prepareStatement(checkUserQuery)) {
+                    statement.setString(1, username_reg);
+                    ResultSet resultSet = statement.executeQuery();
 
-                 if (resultSet.next()) {
-                     if (username_reg.contains("tom'")) {
-                         attackResult = success(this).feedback("user.exists").build();
-                     } else {
-                         attackResult = failed(this).feedback("user.exists").feedbackArgs(username_reg).build();
-                     }
-                 } else {
-                     String insertUserQuery = "INSERT INTO sql_challenge_users VALUES (?, ?, ?)";
-                     try (PreparedStatement preparedStatement = connection.prepareStatement(insertUserQuery)) {
-                         preparedStatement.setString(1, username_reg);
-                         preparedStatement.setString(2, email_reg);
-                         preparedStatement.setString(3, password_reg);
-                         preparedStatement.execute();
-                         attackResult = success(this).feedback("user.created").feedbackArgs(username_reg).build();
-                     }
-                 }
-             }
-         } catch (SQLException e) {
-             attackResult = failed(this).output("Something went wrong").build();
-         }
-     }
-     return attackResult;
- }
+                    if (resultSet.next()) {
+                        if (username_reg.contains("tom'")) {
+                            attackResult = success(this).feedback("user.exists").build();
+                        } else {
+                            attackResult = failed(this).feedback("user.exists").feedbackArgs(username_reg).build();
+                        }
+                    } else {
+                        String insertUserQuery = "INSERT INTO sql_challenge_users VALUES (?, ?, ?)";
+                        try (PreparedStatement preparedStatement = connection.prepareStatement(insertUserQuery)) {
+                            preparedStatement.setString(1, username_reg);
+                            preparedStatement.setString(2, email_reg);
+                            preparedStatement.setString(3, password_reg);
+                            preparedStatement.execute();
+                            attackResult = success(this).feedback("user.created").feedbackArgs(username_reg).build();
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                attackResult = failed(this).output("Something went wrong").build();
+            }
+        }
+        return attackResult;
+    }
 
- private AttackResult checkArguments(String username_reg, String email_reg, String password_reg) {
-     if (StringUtils.isEmpty(username_reg)
-             || StringUtils.isEmpty(email_reg)
-             || StringUtils.isEmpty(password_reg)) {
-         return failed(this).feedback("input.invalid").build();
-     }
-     if (username_reg.length() > 250 || email_reg.length() > 30 || password_reg.length() > 30) {
-         return failed(this).feedback("input.invalid").build();
-     }
-     return null;
- }
+    private AttackResult checkArguments(String username_reg, String email_reg, String password_reg) {
+        if (StringUtils.isEmpty(username_reg)
+                || StringUtils.isEmpty(email_reg)
+                || StringUtils.isEmpty(password_reg)) {
+            return failed(this).feedback("input.invalid").build();
+        }
+        if (username_reg.length() > 250 || email_reg.length() > 30 || password_reg.length() > 30) {
+            return failed(this).feedback("input.invalid").build();
+        }
+        return null;
+    }
 }
